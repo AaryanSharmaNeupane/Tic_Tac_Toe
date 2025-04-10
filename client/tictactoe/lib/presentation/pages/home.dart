@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../widgets/game_cell.dart';
 
@@ -13,11 +14,24 @@ class _HomeState extends State<Home> {
   late List<List<String>> board;
   String currentPlayer = 'X';
   bool gameOver = false;
+  late WebSocketChannel channel;
+
+  void connectToWebSocket() async {
+    final wsUrl = Uri.parse('ws://192.168.110.122:5111/ws/notification/');
+    channel = WebSocketChannel.connect(wsUrl);
+
+    await channel.ready;
+
+    channel.stream.listen((message) {
+      print('Received message: $message');
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     resetGame();
+    connectToWebSocket();
   }
 
   void resetGame() {
@@ -29,6 +43,7 @@ class _HomeState extends State<Home> {
   }
 
   void _handleCellTap(int row, int col) {
+    channel.sink.add(board[row][col]);
     if (board[row][col].isEmpty && !gameOver) {
       setState(() => board[row][col] = currentPlayer);
 
@@ -154,4 +169,3 @@ class _HomeState extends State<Home> {
     );
   }
 }
-
